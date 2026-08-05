@@ -1,0 +1,10 @@
+pandas
+numpy
+plotly
+elapid
+scikit-learn
+requests
+jupyter
+nbformat
+nbconvert
+reportlab

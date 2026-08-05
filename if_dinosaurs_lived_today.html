@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>If Dinosaurs Lived Today — Specimen Dossier</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --canvas:#14170f; --panel:#1c2116; --panel-2:#20261a; --parchment:#e8dfc8;
+  --parchment-dim:#a89f88; --amber:#d38a3f; --rust:#a8462f; --moss:#7fa05a;
+  --moss-dim:#4f6c3a; --brass:#9c8552; --hairline:#33392a;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--canvas);color:var(--parchment);font-family:'Source Serif 4',serif;}
+::-webkit-scrollbar{width:9px;height:9px;}
+::-webkit-scrollbar-track{background:var(--canvas);}
+::-webkit-scrollbar-thumb{background:var(--hairline);border-radius:4px;}
+
+nav{
+  position:sticky;top:0;z-index:1000;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 32px;background:rgba(20,23,15,0.92);backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--hairline);
+}
+nav .brand{
+  font-family:'Fraunces',serif;font-weight:700;font-style:italic;font-size:18px;color:var(--parchment);
+  display:flex;align-items:center;gap:10px;
+}
+nav .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--amber);display:inline-block;}
+nav .tabs{display:flex;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:0.08em;text-transform:uppercase;}
+nav .tabs button{
+  background:none;border:1px solid transparent;color:var(--parchment-dim);
+  padding:8px 16px;cursor:pointer;transition:all .15s ease;border-radius:2px;
+}
+nav .tabs button:hover{color:var(--parchment);}
+nav .tabs button.active{color:var(--amber);border-color:var(--hairline);background:var(--panel);}
+
+.page{display:none;animation:fadeIn .35s ease;}
+.page.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+.hero{
+  padding:64px 32px 40px 32px;
+  background:
+    radial-gradient(ellipse at 20% -10%, rgba(211,138,63,0.10), transparent 55%),
+    linear-gradient(180deg, #171a10, var(--canvas));
+  border-bottom:1px solid var(--hairline);
+}
+.hero .eyebrow{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--amber);margin-bottom:14px;
+}
+.hero h1{
+  font-family:'Fraunces',serif;font-weight:700;font-size:clamp(34px,5vw,58px);line-height:1.05;margin:0 0 18px 0;
+  max-width:820px;
+}
+.hero h1 em{color:var(--amber);font-style:italic;}
+.hero p{max-width:640px;color:var(--parchment-dim);font-size:16px;line-height:1.65;margin:0;}
+.hero .stats{display:flex;gap:36px;margin-top:32px;flex-wrap:wrap;}
+.hero .stat b{font-family:'Fraunces',serif;font-size:28px;color:var(--parchment);display:block;font-weight:600;}
+.hero .stat span{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--parchment-dim);}
+
+.catalog{padding:44px 32px 80px 32px;max-width:1400px;margin:0 auto;}
+.catalog-label{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--parchment-dim);margin-bottom:20px;display:flex;align-items:center;gap:12px;
+}
+.catalog-label::after{content:'';flex:1;height:1px;background:var(--hairline);}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;}
+
+.tag-card{
+  position:relative;background:var(--panel);border:1px solid var(--hairline);border-radius:3px;
+  padding:20px 18px 18px 18px;cursor:pointer;transition:transform .18s ease, border-color .18s ease, background .18s ease;
+}
+.tag-card:hover{transform:translateY(-3px);border-color:var(--brass);background:var(--panel-2);}
+.tag-card::before{
+  content:'';position:absolute;top:14px;right:14px;width:9px;height:9px;border-radius:50%;
+  border:1px solid var(--hairline);background:var(--canvas);
+}
+.tag-card .num{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--brass);letter-spacing:0.08em;}
+.tag-card h3{
+  font-family:'Fraunces',serif;font-style:italic;font-weight:600;font-size:19px;margin:8px 0 6px 0;color:var(--parchment);
+}
+.tag-card .period{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--parchment-dim);margin-bottom:12px;}
+.tag-card .footer-row{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:12px;border-top:1px dashed var(--hairline);}
+.diet-chip{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.06em;text-transform:uppercase;padding:3px 8px;border-radius:2px;border:1px solid;}
+.diet-chip.carnivore{color:var(--rust);border-color:#5a2c25;}
+.diet-chip.herbivore{color:var(--moss);border-color:var(--moss-dim);}
+.tag-card .arrow{color:var(--brass);font-family:'IBM Plex Mono',monospace;font-size:14px;}
+
+.dossier-head{
+  padding:28px 32px 20px 32px;border-bottom:1px solid var(--hairline);
+  display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;
+  background:linear-gradient(180deg, #171a10, var(--canvas));
+}
+.back-link{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;
+  color:var(--parchment-dim);cursor:pointer;background:none;border:none;padding:0;margin-bottom:14px;display:block;
+}
+.back-link:hover{color:var(--amber);}
+.dossier-head h2{font-family:'Fraunces',serif;font-weight:700;font-style:italic;font-size:32px;margin:0;color:var(--parchment);}
+.dossier-head .period-line{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--amber);letter-spacing:0.05em;margin-top:6px;}
+.dossier-body{display:grid;grid-template-columns:360px 1fr;gap:0;}
+@media(max-width:900px){.dossier-body{grid-template-columns:1fr;}}
+
+.specimen-panel{padding:28px 28px 40px 32px;border-right:1px solid var(--hairline);}
+.envelope-block{display:flex;flex-direction:column;gap:10px;margin-bottom:22px;}
+.envelope-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--hairline);font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
+.envelope-row .k{color:var(--parchment-dim);}
+.envelope-row .v{color:var(--parchment);font-weight:500;}
+.section-label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--amber);margin:22px 0 10px 0;}
+.notes-text{font-size:14px;line-height:1.65;color:var(--parchment-dim);font-style:italic;}
+.sources-list{list-style:none;margin:0;padding:0;}
+.sources-list li{
+  font-size:12.5px;line-height:1.55;color:var(--parchment-dim);padding:10px 0 10px 16px;
+  border-left:2px solid var(--hairline);margin-bottom:8px;
+}
+.quality-badge{
+  display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:0.08em;text-transform:uppercase;
+  padding:3px 8px;border-radius:2px;margin-top:14px;
+}
+.quality-badge.quant{color:var(--moss);border:1px solid var(--moss-dim);}
+.quality-badge.qual{color:var(--brass);border:1px solid var(--brass);}
+
+.map-panel{display:flex;flex-direction:column;}
+#map{width:100%;height:440px;background:#10130e;}
+.leaflet-container{background:#10130e;font-family:'Source Serif 4',serif;}
+.map-legend{
+  position:absolute;bottom:16px;left:16px;background:rgba(20,23,15,0.92);border:1px solid var(--hairline);
+  padding:9px 12px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--parchment-dim);z-index:500;border-radius:2px;
+}
+.legend-grad{width:120px;height:7px;background:linear-gradient(90deg,#a8462f,#b5895a,#7fa05a);margin:5px 0 3px 0;border-radius:2px;}
+.map-wrap{position:relative;}
+
+.ranking-panel{padding:24px 32px 40px 32px;}
+.rank-row{display:grid;grid-template-columns:26px 1fr 100px 130px;gap:14px;align-items:center;padding:11px 0;border-bottom:1px solid var(--hairline);font-size:13.5px;}
+.rank-row .n{font-family:'IBM Plex Mono',monospace;color:var(--brass);font-size:11px;}
+.rank-row .region{color:var(--parchment);}
+.bar-wrap{background:#0f120b;border-radius:2px;height:7px;overflow:hidden;}
+.bar{height:100%;background:linear-gradient(90deg,var(--rust),var(--moss));}
+.pct{font-family:'IBM Plex Mono',monospace;font-size:11.5px;text-align:right;color:var(--parchment-dim);}
+.explain-box{
+  margin-top:20px;padding:16px 18px;background:var(--panel);border-left:3px solid var(--amber);
+  font-size:14px;line-height:1.6;color:var(--parchment);max-width:720px;
+}
+.explain-label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--amber);margin-bottom:8px;}
+
+footer{padding:32px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--parchment-dim);border-top:1px solid var(--hairline);}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand"><span class="dot"></span>If Dinosaurs Lived Today</div>
+  <div class="tabs">
+    <button data-page="catalog" class="active">Catalog</button>
+    <button data-page="dossier">Specimen</button>
+  </div>
+</nav>
+
+<section class="page active" id="page-catalog">
+  <div class="hero">
+    <div class="eyebrow">Climate-Based Species Distribution Model &middot; 12 Specimens Catalogued</div>
+    <h1>Which modern regions could <em>still</em> support a dinosaur?</h1>
+    <p>Each specimen's estimated paleoclimate envelope, drawn from published leaf-margin,
+       CLAMP, and paleosol geochemistry studies where available, is matched against real
+       modern climate data across 59 world regions. Select a specimen to open its dossier.</p>
+    <div class="stats">
+      <div class="stat"><b>12</b><span>Species catalogued</span></div>
+      <div class="stat"><b>59</b><span>Modern regions scored</span></div>
+      <div class="stat"><b>9/12</b><span>Backed by cited papers</span></div>
+    </div>
+  </div>
+  <div class="catalog">
+    <div class="catalog-label">Specimen index</div>
+    <div class="grid" id="specimen-grid"></div>
+  </div>
+</section>
+
+<section class="page" id="page-dossier">
+  <div class="dossier-head">
+    <div>
+      <button class="back-link" onclick="goTo('catalog')">&larr; Back to catalog</button>
+      <h2 id="d-name"></h2>
+      <div class="period-line" id="d-period"></div>
+    </div>
+  </div>
+  <div class="dossier-body">
+    <div class="specimen-panel">
+      <div class="section-label">Estimated climate envelope</div>
+      <div class="envelope-block" id="d-envelope"></div>
+      <div class="section-label">Field notes</div>
+      <div class="notes-text" id="d-notes"></div>
+      <div id="d-quality"></div>
+      <div class="section-label">Cited sources</div>
+      <ul class="sources-list" id="d-sources"></ul>
+    </div>
+    <div class="map-panel">
+      <div class="map-wrap">
+        <div id="map"></div>
+        <div class="map-legend">
+          <div>Suitability</div>
+          <div class="legend-grad"></div>
+          <div style="display:flex;justify-content:space-between;"><span>Low</span><span>High</span></div>
+        </div>
+      </div>
+      <div class="ranking-panel">
+        <div class="section-label">Top 5 modern regions</div>
+        <div id="rank-list"></div>
+        <div class="explain-box">
+          <div class="explain-label">Why</div>
+          <div id="explain-text"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  If Dinosaurs Lived Today &middot; Climate Suitability Model, cross-validated against a real MaxEnt implementation &middot;
+  Illustrations are original stylized silhouettes (self-contained, no external image dependencies) &middot;
+  Demonstration-grade research prototype, not a peer-reviewed reconstruction.
+</footer>
+
+<script>
+const DINOSAURS = [{"id": "trex", "name": "Tyrannosaurus rex", "period": "Late Cretaceous (68-66 Mya)", "diet": "carnivore", "habitat_type": "floodplain_forest", "found_regions": ["Western North America (Hell Creek Formation, Montana/Dakotas/Wyoming)"], "paleocoordinates": [52.6, -74.4], "temp_range_c": [7, 14], "precip_range_mm": [1700, 2000], "humidity_range_pct": [55, 80], "notes": "Lived in subtropical-to-warm-temperate floodplains and coastal forests with distinct wet/dry seasons.", "sources": ["Arens & Allen (2014), 'A florule from the base of the Hell Creek Formation...': leaf-margin MAT ~7-11C (CLAMP 11-12C +/-2C), leaf-area MAP ~1910-1970mm.", "Wikipedia, 'Hell Creek Formation': mild subtropical/temperate climate, no prolonged freeze, based on crocodilian and palm fossils."]}, {"id": "triceratops", "name": "Triceratops horridus", "period": "Late Cretaceous (68-66 Mya)", "diet": "herbivore", "habitat_type": "floodplain_forest", "found_regions": ["Western North America (Hell Creek Formation)"], "paleocoordinates": [52.6, -74.4], "temp_range_c": [7, 14], "precip_range_mm": [1700, 2000], "humidity_range_pct": [55, 80], "notes": "Grazed open floodplains near rivers; same formation and climate envelope as T. rex, its known contemporary and predator.", "sources": ["Arens & Allen (2014), Hell Creek Formation florule study, as above.", "Co-occurrence data: Triceratops and T. rex are recovered from the same Hell Creek Formation localities."]}, {"id": "velociraptor", "name": "Velociraptor mongoliensis", "period": "Late Cretaceous (75-71 Mya)", "diet": "carnivore", "habitat_type": "arid_desert", "found_regions": ["Central Asia (Djadochta Formation, Gobi Desert, Mongolia)"], "paleocoordinates": [43.0, 103.0], "temp_range_c": [8, 28], "precip_range_mm": [100, 300], "humidity_range_pct": [15, 35], "notes": "Adapted to an arid eolian dune environment with interdune oases and seasonal sandstorms. Multiple sources note the present-day Gobi Desert climate at Djadochta sites differs little from 80 Mya, aside from being somewhat warmer and less arid then, an unusually direct modern-paleo analog.", "sources": ["Wikipedia / Fossil Wiki, 'Djadochta Formation': arid habitat of sand dunes, little freshwater apart from oases and arroyos; present-day climate at most sites differs little from ~80 Mya.", "Grokipedia, 'Djadochta Formation': eolian dune sands, interdune ponds/lakes, semiarid depositional conditions."]}, {"id": "stegosaurus", "name": "Stegosaurus stenops", "period": "Late Jurassic (155-150 Mya)", "diet": "herbivore", "habitat_type": "seasonal_savanna", "found_regions": ["Western North America (Morrison Formation)"], "paleocoordinates": [40.0, -100.0], "temp_range_c": [16, 28], "precip_range_mm": [600, 900], "humidity_range_pct": [40, 62], "notes": "Semiarid floodplains with strong wet-dry seasonality, open woodland and fern prairies; high atmospheric CO2 implied warm temperatures.", "sources": ["Retallack (1997), cited in ScienceDirect summary 'The implications of a dry climate...': Morrison paleosols indicate MAP of only 600-900mm with a dry season.", "Demko & Parrish (1998): GCM results predict a rain-shadow effect creating semiarid to arid conditions over the Morrison basin."]}, {"id": "brachiosaurus", "name": "Brachiosaurus altithorax", "period": "Late Jurassic (154-150 Mya)", "diet": "herbivore", "habitat_type": "seasonal_savanna", "found_regions": ["Western North America (Morrison Formation)"], "paleocoordinates": [40.0, -100.0], "temp_range_c": [16, 28], "precip_range_mm": [600, 1000], "humidity_range_pct": [40, 65], "notes": "Browsed tall conifers in warm semiarid-to-subhumid floodplain woodlands; MAP estimates vary regionally within the Morrison basin (drier south, wetter north).", "sources": ["Myers et al., cited in SMU research news: geochemical MAP estimates ~45in (Montana) to ~20in (Wyoming) to ~30in (New Mexico) across the Morrison basin.", "Retallack (1997), Morrison paleosols MAP 600-900mm."]}, {"id": "spinosaurus", "name": "Spinosaurus aegyptiacus", "period": "Mid Cretaceous (99-93 Mya)", "diet": "carnivore", "habitat_type": "tropical_wetland", "found_regions": ["North Africa (Bahariya Formation, Egypt)"], "paleocoordinates": [26.0, 30.0], "temp_range_c": [24, 34], "precip_range_mm": [1200, 2000], "humidity_range_pct": [65, 90], "notes": "Semi-aquatic predator in a tropical coastal wetland system dominated by mangroves, lagoons, tidal flats, and river deltas; monsoonal, largely aseasonal warmth.", "sources": ["Fandom/Surviving Earth, Spinosaurus paleoecology summary: tropical climate lacking defined seasons, violent monsoons, coastal wetland dominated by mangroves.", "El Atfy et al. (2023-2025), Swiss Journal of Palaeontology, Bahariya Formation macroflora study: warm and humid paleoclimate disrupted by dry phases."]}, {"id": "ankylosaurus", "name": "Ankylosaurus magniventris", "period": "Late Cretaceous (68-66 Mya)", "diet": "herbivore", "habitat_type": "floodplain_forest", "found_regions": ["Western North America (Hell Creek Formation)"], "paleocoordinates": [52.6, -74.4], "temp_range_c": [7, 14], "precip_range_mm": [1700, 2000], "humidity_range_pct": [55, 80], "notes": "Same formation and climate envelope as T. rex and Triceratops; coastal floodplains and conifer forests.", "sources": ["Arens & Allen (2014), Hell Creek Formation florule study, as above."]}, {"id": "parasaurolophus", "name": "Parasaurolophus walkeri", "period": "Late Cretaceous (76-73 Mya)", "diet": "herbivore", "habitat_type": "tropical_wetland", "found_regions": ["Western North America (Dinosaur Park Formation, Alberta)"], "paleocoordinates": [48.0, -95.0], "temp_range_c": [18, 27], "precip_range_mm": [1000, 1600], "humidity_range_pct": [58, 80], "notes": "Humid coastal lowlands and river deltas along the Western Interior Seaway with dense vegetation. NOTE: this range is a formation-level qualitative interpretation (coastal floodplain deposits), not yet cross-checked against a quantitative multi-proxy study the way Hell Creek and Morrison were.", "sources": ["Wikipedia, 'Dinosaur Park Formation': deposited on a coastal floodplain of the Western Interior Seaway, subtropical/warm-temperate, humid."]}, {"id": "allosaurus", "name": "Allosaurus fragilis", "period": "Late Jurassic (155-145 Mya)", "diet": "carnivore", "habitat_type": "seasonal_savanna", "found_regions": ["Western North America (Morrison Formation)"], "paleocoordinates": [40.0, -100.0], "temp_range_c": [16, 28], "precip_range_mm": [600, 900], "humidity_range_pct": [38, 62], "notes": "Apex predator of the same semiarid Morrison floodplain woodlands as Stegosaurus and Diplodocus, its known prey.", "sources": ["Retallack (1997) / Demko & Parrish (1998), Morrison Formation paleoclimate, as above."]}, {"id": "iguanodon", "name": "Iguanodon bernissartensis", "period": "Early Cretaceous (126-125 Mya)", "diet": "herbivore", "habitat_type": "temperate_forest", "found_regions": ["Western Europe (Wealden Group, England/Belgium)"], "paleocoordinates": [40.0, 5.0], "temp_range_c": [14, 24], "precip_range_mm": [800, 1300], "humidity_range_pct": [55, 78], "notes": "Warm-temperate floodplains and conifer-fern forests with mild, wet winters. NOTE: formation-level qualitative interpretation, not a quantitative multi-proxy reconstruction.", "sources": ["Wikipedia, 'Wealden Group': freshwater and floodplain deposits, warm temperate climate interpretation based on sedimentology and flora."]}, {"id": "diplodocus", "name": "Diplodocus carnegii", "period": "Late Jurassic (154-152 Mya)", "diet": "herbivore", "habitat_type": "seasonal_savanna", "found_regions": ["Western North America (Morrison Formation)"], "paleocoordinates": [40.0, -100.0], "temp_range_c": [16, 28], "precip_range_mm": [600, 900], "humidity_range_pct": [35, 60], "notes": "Grazed low ground vegetation across the same semiarid Morrison floodplains as Stegosaurus and Allosaurus.", "sources": ["Retallack (1997) / Demko & Parrish (1998), Morrison Formation paleoclimate, as above."]}, {"id": "argentinosaurus", "name": "Argentinosaurus huinculensis", "period": "Mid Cretaceous (97-93 Mya)", "diet": "herbivore", "habitat_type": "seasonal_savanna", "found_regions": ["South America (Candeleros Formation, Patagonia, Argentina)"], "paleocoordinates": [-38.0, -68.0], "temp_range_c": [17, 27], "precip_range_mm": [600, 1100], "humidity_range_pct": [40, 65], "notes": "Semiarid to sub-humid inland fluvial plains. NOTE: formation-level qualitative interpretation, not a quantitative multi-proxy reconstruction.", "sources": ["Wikipedia, 'Candeleros Formation': fluvial and eolian deposits interpreted as a semiarid inland environment."]}];
+const REGIONS = [{"id": "amazon_basin", "name": "Amazon Basin, Brazil", "lat": -3.5, "lon": -62.0, "temp_c": 26, "precip_mm": 2200, "humidity_pct": 85}, {"id": "congo_basin", "name": "Congo Basin, DR Congo", "lat": -0.5, "lon": 23.0, "temp_c": 25, "precip_mm": 1700, "humidity_pct": 82}, {"id": "sahara", "name": "Sahara Desert, Algeria", "lat": 23.0, "lon": 5.0, "temp_c": 28, "precip_mm": 50, "humidity_pct": 20}, {"id": "gobi", "name": "Gobi Desert, Mongolia", "lat": 43.0, "lon": 103.0, "temp_c": 6, "precip_mm": 190, "humidity_pct": 33}, {"id": "sonoran", "name": "Sonoran Desert, Arizona USA", "lat": 32.5, "lon": -111.0, "temp_c": 22, "precip_mm": 300, "humidity_pct": 30}, {"id": "great_plains", "name": "Great Plains, USA", "lat": 41.0, "lon": -100.0, "temp_c": 11, "precip_mm": 550, "humidity_pct": 55}, {"id": "pacific_nw", "name": "Pacific Northwest, USA", "lat": 46.0, "lon": -122.0, "temp_c": 11, "precip_mm": 1500, "humidity_pct": 78}, {"id": "florida", "name": "Florida Everglades, USA", "lat": 26.0, "lon": -81.0, "temp_c": 24, "precip_mm": 1400, "humidity_pct": 78}, {"id": "louisiana_delta", "name": "Mississippi Delta, USA", "lat": 29.5, "lon": -90.0, "temp_c": 20, "precip_mm": 1600, "humidity_pct": 75}, {"id": "patagonia", "name": "Patagonian Steppe, Argentina", "lat": -45.0, "lon": -69.0, "temp_c": 9, "precip_mm": 250, "humidity_pct": 50}, {"id": "pampas", "name": "Pampas, Argentina", "lat": -34.5, "lon": -61.0, "temp_c": 16, "precip_mm": 950, "humidity_pct": 62}, {"id": "atacama", "name": "Atacama Desert, Chile", "lat": -23.5, "lon": -69.0, "temp_c": 18, "precip_mm": 15, "humidity_pct": 25}, {"id": "sahel", "name": "Sahel, Niger", "lat": 14.0, "lon": 8.0, "temp_c": 29, "precip_mm": 400, "humidity_pct": 35}, {"id": "serengeti", "name": "Serengeti, Tanzania", "lat": -2.5, "lon": 34.8, "temp_c": 21, "precip_mm": 900, "humidity_pct": 55}, {"id": "kalahari", "name": "Kalahari Desert, Botswana", "lat": -23.0, "lon": 22.0, "temp_c": 21, "precip_mm": 250, "humidity_pct": 30}, {"id": "madagascar", "name": "Madagascar Highlands", "lat": -19.0, "lon": 46.8, "temp_c": 20, "precip_mm": 1300, "humidity_pct": 70}, {"id": "western_europe", "name": "Western Europe (France/Belgium)", "lat": 48.5, "lon": 3.0, "temp_c": 11, "precip_mm": 850, "humidity_pct": 78}, {"id": "mediterranean", "name": "Mediterranean Basin, Spain", "lat": 40.0, "lon": 0.0, "temp_c": 16, "precip_mm": 550, "humidity_pct": 62}, {"id": "scandinavia", "name": "Southern Scandinavia, Sweden", "lat": 59.0, "lon": 15.0, "temp_c": 6, "precip_mm": 700, "humidity_pct": 75}, {"id": "siberian_taiga", "name": "Siberian Taiga, Russia", "lat": 60.0, "lon": 90.0, "temp_c": -3, "precip_mm": 450, "humidity_pct": 70}, {"id": "steppe", "name": "Kazakh Steppe, Kazakhstan", "lat": 48.0, "lon": 68.0, "temp_c": 8, "precip_mm": 300, "humidity_pct": 55}, {"id": "se_asia", "name": "Southeast Asia (Mekong), Vietnam", "lat": 12.0, "lon": 105.0, "temp_c": 27, "precip_mm": 1900, "humidity_pct": 82}, {"id": "indian_gangetic", "name": "Gangetic Plain, India", "lat": 26.0, "lon": 82.0, "temp_c": 25, "precip_mm": 1100, "humidity_pct": 65}, {"id": "thar_desert", "name": "Thar Desert, Pakistan/India", "lat": 27.0, "lon": 71.0, "temp_c": 27, "precip_mm": 250, "humidity_pct": 35}, {"id": "china_central", "name": "Central China Plains", "lat": 34.0, "lon": 113.0, "temp_c": 15, "precip_mm": 700, "humidity_pct": 62}, {"id": "japan_temperate", "name": "Central Japan", "lat": 36.0, "lon": 138.0, "temp_c": 14, "precip_mm": 1600, "humidity_pct": 70}, {"id": "n_australia", "name": "Northern Australia (Kakadu)", "lat": -13.0, "lon": 132.5, "temp_c": 28, "precip_mm": 1500, "humidity_pct": 70}, {"id": "outback", "name": "Australian Outback", "lat": -25.0, "lon": 133.0, "temp_c": 22, "precip_mm": 250, "humidity_pct": 30}, {"id": "s_australia", "name": "Southeastern Australia", "lat": -35.0, "lon": 145.0, "temp_c": 15, "precip_mm": 550, "humidity_pct": 58}, {"id": "new_zealand", "name": "New Zealand South Island", "lat": -43.5, "lon": 171.0, "temp_c": 11, "precip_mm": 1200, "humidity_pct": 75}, {"id": "borneo", "name": "Borneo Rainforest, Indonesia", "lat": 0.5, "lon": 114.0, "temp_c": 27, "precip_mm": 2800, "humidity_pct": 87}, {"id": "papua", "name": "Papua New Guinea Lowlands", "lat": -6.5, "lon": 143.0, "temp_c": 26, "precip_mm": 2500, "humidity_pct": 85}, {"id": "andes_highland", "name": "Andean Highlands, Peru", "lat": -13.5, "lon": -71.5, "temp_c": 9, "precip_mm": 700, "humidity_pct": 55}, {"id": "central_america", "name": "Central American Lowlands, Costa Rica", "lat": 10.0, "lon": -84.0, "temp_c": 25, "precip_mm": 2500, "humidity_pct": 85}, {"id": "great_lakes", "name": "Great Lakes Region, USA/Canada", "lat": 45.0, "lon": -84.0, "temp_c": 8, "precip_mm": 900, "humidity_pct": 70}, {"id": "appalachian", "name": "Appalachian Forest, USA", "lat": 37.0, "lon": -81.0, "temp_c": 13, "precip_mm": 1100, "humidity_pct": 68}, {"id": "iberia_dry", "name": "Central Spain Plateau", "lat": 40.5, "lon": -3.7, "temp_c": 14, "precip_mm": 450, "humidity_pct": 55}, {"id": "east_africa_highland", "name": "East African Highlands, Kenya", "lat": 0.0, "lon": 37.0, "temp_c": 18, "precip_mm": 900, "humidity_pct": 60}, {"id": "nile_delta", "name": "Nile Delta, Egypt", "lat": 30.8, "lon": 31.0, "temp_c": 21, "precip_mm": 100, "humidity_pct": 55}, {"id": "namib", "name": "Namib Desert, Namibia", "lat": -23.5, "lon": 15.0, "temp_c": 19, "precip_mm": 60, "humidity_pct": 40}, {"id": "british_isles", "name": "British Isles, UK", "lat": 53.0, "lon": -2.0, "temp_c": 10, "precip_mm": 1000, "humidity_pct": 80}, {"id": "carpathian", "name": "Carpathian Basin, Hungary", "lat": 47.0, "lon": 19.0, "temp_c": 11, "precip_mm": 600, "humidity_pct": 65}, {"id": "manchuria", "name": "Manchuria, Northeast China", "lat": 45.0, "lon": 126.0, "temp_c": 5, "precip_mm": 600, "humidity_pct": 62}, {"id": "tibetan_plateau", "name": "Tibetan Plateau, China", "lat": 32.0, "lon": 88.0, "temp_c": 0, "precip_mm": 300, "humidity_pct": 45}, {"id": "yucatan", "name": "Yucatan Peninsula, Mexico", "lat": 20.5, "lon": -88.5, "temp_c": 26, "precip_mm": 1300, "humidity_pct": 78}, {"id": "cerrado", "name": "Cerrado Savanna, Brazil", "lat": -15.5, "lon": -47.9, "temp_c": 23, "precip_mm": 1400, "humidity_pct": 62}, {"id": "chaco", "name": "Gran Chaco, Paraguay", "lat": -23.0, "lon": -60.0, "temp_c": 24, "precip_mm": 900, "humidity_pct": 58}, {"id": "iran_plateau", "name": "Iranian Plateau, Iran", "lat": 33.0, "lon": 53.0, "temp_c": 17, "precip_mm": 230, "humidity_pct": 35}, {"id": "anatolia", "name": "Anatolian Plateau, Turkey", "lat": 39.0, "lon": 35.0, "temp_c": 11, "precip_mm": 400, "humidity_pct": 55}, {"id": "west_siberian_plain", "name": "West Siberian Plain, Russia", "lat": 62.0, "lon": 75.0, "temp_c": -4, "precip_mm": 500, "humidity_pct": 75}, {"id": "alaska_interior", "name": "Interior Alaska, USA", "lat": 64.0, "lon": -150.0, "temp_c": -3, "precip_mm": 300, "humidity_pct": 65}, {"id": "greenland_coast", "name": "Southern Greenland Coast", "lat": 61.0, "lon": -45.0, "temp_c": 1, "precip_mm": 800, "humidity_pct": 75}, {"id": "indonesia_java", "name": "Java, Indonesia", "lat": -7.5, "lon": 110.0, "temp_c": 26, "precip_mm": 2000, "humidity_pct": 80}, {"id": "philippines", "name": "Luzon, Philippines", "lat": 16.5, "lon": 121.0, "temp_c": 27, "precip_mm": 2500, "humidity_pct": 82}, {"id": "korea", "name": "Korean Peninsula", "lat": 37.5, "lon": 127.5, "temp_c": 12, "precip_mm": 1300, "humidity_pct": 68}, {"id": "punjab_pakistan", "name": "Punjab Plains, Pakistan", "lat": 31.5, "lon": 74.3, "temp_c": 24, "precip_mm": 600, "humidity_pct": 50}, {"id": "himalaya_foothill", "name": "Himalayan Foothills, Nepal", "lat": 27.7, "lon": 85.3, "temp_c": 18, "precip_mm": 1500, "humidity_pct": 70}, {"id": "arabian_peninsula", "name": "Arabian Desert, Saudi Arabia", "lat": 24.0, "lon": 45.0, "temp_c": 27, "precip_mm": 90, "humidity_pct": 25}, {"id": "west_africa_coast", "name": "West African Coast, Ghana", "lat": 6.0, "lon": -1.0, "temp_c": 27, "precip_mm": 1600, "humidity_pct": 82}];
+let currentDino = DINOSAURS[0];
+let map = null;
+let markers = [];
+
+
+
+function goTo(pageId){
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + pageId).classList.add('active');
+  document.querySelectorAll('nav .tabs button').forEach(b => b.classList.toggle('active', b.dataset.page === pageId));
+  if(pageId === 'dossier'){
+    setTimeout(() => { if(map) map.invalidateSize(); }, 50);
+  }
+  window.scrollTo({top:0, behavior:'instant'});
+}
+document.querySelectorAll('nav .tabs button').forEach(b => {
+  b.addEventListener('click', () => goTo(b.dataset.page));
+});
+
+function variableScore(value, low, high){
+  if(value >= low && value <= high) return 1.0;
+  const width = Math.max(high - low, 1e-6);
+  const sigma = width * 0.6;
+  const distance = value < low ? (low - value) : (value - high);
+  return Math.exp(-(distance*distance)/(2*sigma*sigma));
+}
+function scoreRegion(dino, region){
+  const t = variableScore(region.temp_c, dino.temp_range_c[0], dino.temp_range_c[1]);
+  const p = variableScore(region.precip_mm, dino.precip_range_mm[0], dino.precip_range_mm[1]);
+  const h = variableScore(region.humidity_pct, dino.humidity_range_pct[0], dino.humidity_range_pct[1]);
+  const suitability = (t*0.40 + p*0.35 + h*0.25) * 100;
+  const dietModifier = dino.diet === 'herbivore' ? 0.90 : 0.82;
+  const survival = Math.max(0, Math.min(100, Math.round(suitability * dietModifier * 10)/10));
+  return { region, suitability: Math.round(suitability*10)/10, survival,
+    temp_score: Math.round(t*1000)/10, precip_score: Math.round(p*1000)/10, humidity_score: Math.round(h*1000)/10 };
+}
+function explain(dino, r){
+  const subs = {temperature: r.temp_score, rainfall: r.precip_score, humidity: r.humidity_score};
+  const best = Object.keys(subs).reduce((a,b)=> subs[a]>subs[b]?a:b);
+  const worst = Object.keys(subs).reduce((a,b)=> subs[a]<subs[b]?a:b);
+  let parts = [`${r.region.name} scores ${r.suitability}% suitable for ${dino.name}.`];
+  if(subs[best] >= 85) parts.push(`Its ${best} closely matches the species' estimated paleoclimate envelope.`);
+  if(subs[worst] < 60) parts.push(`However, its ${worst} deviates significantly from what ${dino.name} was adapted to.`);
+  if(subs[worst] >= 60 && subs[best] < 85) parts.push('Overall climate conditions are a moderate but imperfect match.');
+  return parts.join(' ');
+}
+function colorFor(score){
+  if(score < 50){ return lerpColor('#a8462f', '#b5895a', score/50); }
+  return lerpColor('#b5895a', '#7fa05a', (score-50)/50);
+}
+function lerpColor(a,b,t){
+  const ah=a.replace('#',''), bh=b.replace('#','');
+  const ar=parseInt(ah.substring(0,2),16), ag=parseInt(ah.substring(2,4),16), ab=parseInt(ah.substring(4,6),16);
+  const br=parseInt(bh.substring(0,2),16), bg=parseInt(bh.substring(2,4),16), bb=parseInt(bh.substring(4,6),16);
+  const r=Math.round(ar+(br-ar)*t), g=Math.round(ag+(bg-ag)*t), bl=Math.round(ab+(bb-ab)*t);
+  return `rgb(${r},${g},${bl})`;
+}
+
+function buildCatalog(){
+  const grid = document.getElementById('specimen-grid');
+  DINOSAURS.forEach((d, i) => {
+    const card = document.createElement('div');
+    card.className = 'tag-card';
+    card.innerHTML = `
+      <div class="num">SPECIMEN No. ${String(i+1).padStart(2,'0')}</div>
+      <h3>${d.name}</h3>
+      <div class="period">${d.period}</div>
+      <div class="footer-row">
+        <span class="diet-chip ${d.diet}">${d.diet}</span>
+        <span class="arrow">&rarr;</span>
+      </div>
+    `;
+    card.addEventListener('click', () => openDossier(d));
+    grid.appendChild(card);
+  });
+}
+
+function initMap(){
+  map = L.map('map', {zoomControl:true, worldCopyJump:true}).setView([15,20], 1.6);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution:'&copy; OpenStreetMap &copy; CARTO', subdomains:'abcd', maxZoom:8
+  }).addTo(map);
+}
+
+function openDossier(dino){
+  currentDino = dino;
+  document.getElementById('d-name').textContent = dino.name;
+  document.getElementById('d-period').textContent = dino.period + '  \u00b7  ' + dino.found_regions.join(', ');
+
+  const env = document.getElementById('d-envelope');
+  env.innerHTML = `
+    <div class="envelope-row"><span class="k">Temperature</span><span class="v">${dino.temp_range_c[0]} to ${dino.temp_range_c[1]} &deg;C</span></div>
+    <div class="envelope-row"><span class="k">Rainfall</span><span class="v">${dino.precip_range_mm[0]} to ${dino.precip_range_mm[1]} mm/yr</span></div>
+    <div class="envelope-row"><span class="k">Humidity</span><span class="v">${dino.humidity_range_pct[0]} to ${dino.humidity_range_pct[1]}%</span></div>
+    <div class="envelope-row"><span class="k">Diet</span><span class="v">${dino.diet}</span></div>
+    <div class="envelope-row"><span class="k">Habitat type</span><span class="v">${dino.habitat_type.replace(/_/g,' ')}</span></div>
+  `;
+  document.getElementById('d-notes').textContent = dino.notes;
+
+  const isQuant = !dino.notes.includes('NOTE:');
+  document.getElementById('d-quality').innerHTML = isQuant
+    ? '<span class="quality-badge quant">Quantitative proxy data</span>'
+    : '<span class="quality-badge qual">Qualitative interpretation</span>';
+
+  const srcList = document.getElementById('d-sources');
+  srcList.innerHTML = '';
+  (dino.sources || []).forEach(s => {
+    const li = document.createElement('li');
+    li.textContent = s;
+    srcList.appendChild(li);
+  });
+
+  const results = REGIONS.map(r => scoreRegion(dino, r));
+  results.sort((a,b)=> b.suitability - a.suitability);
+
+  if(!map) initMap();
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+  results.forEach(r => {
+    const radius = 4 + (r.suitability/100)*10;
+    const marker = L.circleMarker([r.region.lat, r.region.lon], {
+      radius, color: colorFor(r.suitability), fillColor: colorFor(r.suitability),
+      fillOpacity:0.75, weight:1, opacity:0.9
+    }).bindTooltip(`${r.region.name}: ${r.suitability}% suitable`, {direction:'top'});
+    marker.addTo(map);
+    markers.push(marker);
+  });
+
+  const rankList = document.getElementById('rank-list');
+  rankList.innerHTML = '';
+  results.slice(0,5).forEach((r,i) => {
+    const row = document.createElement('div');
+    row.className = 'rank-row';
+    row.innerHTML = `
+      <div class="n">${i+1}</div>
+      <div class="region">${r.region.name}</div>
+      <div class="bar-wrap"><div class="bar" style="width:${r.suitability}%"></div></div>
+      <div class="pct">${r.suitability}% suit. / ${r.survival}% surv.</div>
+    `;
+    rankList.appendChild(row);
+  });
+
+  document.getElementById('explain-text').textContent = explain(dino, results[0]);
+  goTo('dossier');
+}
+
+buildCatalog();
+</script>
+</body>
+</html>
